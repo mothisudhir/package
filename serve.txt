@@ -1,0 +1,49 @@
+const express = require('express');
+const mongoose = require('mongoose');
+const bodyParser = require('body-parser');
+const cors = require('cors');
+
+const app = express();
+const PORT = 3000;
+
+// Middleware
+app.use(cors());
+app.use(bodyParser.json());
+
+// Connect to MongoDB
+mongoose.connect('mongodb://localhost:27017/bmiDB', {
+  useNewUrlParser: true,
+  useUnifiedTopology: true
+}).then(() => {
+  console.log('Connected to MongoDB');
+}).catch(err => {
+  console.log('Error connecting to MongoDB:', err);
+});
+
+// BMI Model
+const bmiSchema = new mongoose.Schema({
+  name: String,
+  bmi: Number
+});
+
+const Bmi = mongoose.model('Bmi', bmiSchema);
+
+// POST route to save BMI
+app.post('/bmi', async (req, res) => {
+  const { name, bmi } = req.body;
+  if (!name || !bmi) {
+    return res.status(400).json({ error: 'Name and BMI are required' });
+  }
+
+  try {
+    const newBmi = new Bmi({ name, bmi });
+    await newBmi.save();
+    res.json({ message: 'BMI saved successfully', bmi: newBmi });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to save BMI' });
+  }
+});
+
+app.listen(PORT, () => {
+  console.log(`Server is running on http://localhost:${PORT}`);
+});
